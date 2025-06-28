@@ -1,2 +1,2 @@
 # Mittens
-A tool to generate aligned multichannel image in a publishable style
+A Fiji tool to generate aligned multichannel image in a publishable style
