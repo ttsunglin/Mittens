@@ -57,6 +57,7 @@ importClass(Packages.ij.plugin.RGBStackMerge);
 importClass(Packages.ij.gui.NonBlockingGenericDialog);
 importClass(Packages.ij.process.ImageProcessor);
 importClass(Packages.ij.Macro);
+importClass(Packages.ij.ImageStack);
 
 // === Global image references ===
 var originalImage = null;
@@ -400,12 +401,8 @@ function getChannelImage16OnTheFly(chStr) {
     }
     
     var dup = IJ.getImage();
-    // Make sure we maintain the pixel values when converting bit depth
-    if (dup.getBitDepth() == 8) {
-        // For 8-bit images, scale to 16-bit range
-        IJ.run(dup, "16-bit", "");
-        IJ.run(dup, "Enhance Contrast", "saturated=0.35");
-    } else if (dup.getBitDepth() != 16) {
+    // Convert to 16-bit if necessary (without modifying pixel values)
+    if (dup.getBitDepth() != 16) {
         IJ.run(dup, "16-bit", "");
     }
     dup.setTitle("16bit_" + visImp.getTitle());
@@ -502,16 +499,27 @@ function stackImagesHorizontally(images) {
     
     var stack;
     if (hasTimeFrames) {
-        // Create a time stack
+        // Create a hyperstack with time frames (not slices)
+        var imgStack;
         if (anyRGB) {
-            stack = IJ.createImage("Stacked", "RGB", width, height, maxFrames);
+            imgStack = new ImageStack(width, height);
+            for (var f = 1; f <= maxFrames; f++) {
+                imgStack.addSlice(IJ.createImage("frame", "RGB", width, height, 1).getProcessor());
+            }
+            stack = new ImagePlus("Stacked", imgStack);
+            stack.setDimensions(1, 1, maxFrames); // nChannels, nSlices, nFrames
         } else {
             var bd = images[0].getBitDepth();
-            if (bd == 16) {
-                stack = IJ.createImage("Stacked", "16-bit black", width, height, maxFrames);
-            } else {
-                stack = IJ.createImage("Stacked", "8-bit black", width, height, maxFrames);
+            imgStack = new ImageStack(width, height);
+            for (var f = 1; f <= maxFrames; f++) {
+                if (bd == 16) {
+                    imgStack.addSlice(IJ.createImage("frame", "16-bit black", width, height, 1).getProcessor());
+                } else {
+                    imgStack.addSlice(IJ.createImage("frame", "8-bit black", width, height, 1).getProcessor());
+                }
             }
+            stack = new ImagePlus("Stacked", imgStack);
+            stack.setDimensions(1, 1, maxFrames); // nChannels, nSlices, nFrames
         }
         
         // Process each time frame
@@ -609,14 +617,22 @@ function closeAllExceptOriginal() {
 // (8) Function: Open Scale Bar Tool
 ////////////////////////////////////////
 function openScaleBar() {
-    IJ.run("Scale Bar...", "");
+    try {
+        IJ.run("Scale Bar...", "");
+    } catch (e) {
+        // User canceled the dialog - ignore the error
+    }
 }
 
 ////////////////////////////////////////
 // (9) Function: Open Properties Dialog
 ////////////////////////////////////////
 function openProperties() {
-    IJ.run("Properties...", "");
+    try {
+        IJ.run("Properties...", "");
+    } catch (e) {
+        // User canceled the dialog - ignore the error
+    }
 }
 
 ////////////////////////////////////////
@@ -757,6 +773,9 @@ function main() {
     mainUIDialog.addButton("Properties", function() { openProperties(); });
     mainUIDialog.addButton("Add Time Bar", function() { openTimeBar(); });
     mainUIDialog.addButton("Scale and Export (3x + AVI)", function() { scaleAndExport(); });
+    
+    // Spacing before close button
+    mainUIDialog.addMessage(" ");
     
     // Button: Close All Except Original
     mainUIDialog.addButton("Close generated images", function() { closeAllExceptOriginal(); });
