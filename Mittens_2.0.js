@@ -2,7 +2,8 @@
 // Author: TTL
 // Version: 2.0
 // Description: A plugin for generating fixed imaging images for the ST lab.
-// This script provides tools for channel duplication, merging, and alignment with time frame support.
+// This script provides tools for channel duplication, merging, alignment with time frame support,
+// and movie export capabilities.
 
 
 /**
@@ -38,9 +39,11 @@
  *    for a selected channel or regenerates a hidden merged image if "Merge" is chosen, and then stacks these
  *    images side-by-side into an aligned montage. The montage inherits calibration from the original image.
  * 4. "Add Scale Bar": Opens ImageJ's Scale Bar tool.
- * 5. "Properties": Opens ImageJ's Properties dialog.
- * 6. "Add Time Bar": Opens the Time Bar plugin if installed.
- * 7. "Close All Except Original": Closes all windows except the original image.
+ * 5. "Movie Export": Opens a window with movie export options including:
+ *    - Properties: Opens ImageJ's Properties dialog.
+ *    - Add Time Bar: Opens the Time Bar plugin if installed.
+ *    - Scale and Export: Scales image 3x and exports as AVI.
+ * 6. "Close All Except Original": Closes all windows except the original image.
  *
  * Debug logging is available via the debugLog() function; its calls are currently commented out.
  */
@@ -650,7 +653,54 @@ function openTimeBar() {
 }
 
 ////////////////////////////////////////
-// (11) Main: Initialize the UI Dialog
+// (11) Function: Scale and Export - Scale image 3x and export as AVI
+////////////////////////////////////////
+function scaleAndExport() {
+    var img = IJ.getImage();
+    if (!img) {
+        IJ.showMessage("Error", "No image is open!");
+        return;
+    }
+    
+    // Duplicate the image to avoid modifying the original
+    IJ.run(img, "Duplicate...", "duplicate");
+    var dupImg = IJ.getImage();
+    
+    // Scale the image by 3x
+    var width = dupImg.getWidth();
+    var height = dupImg.getHeight();
+    var newWidth = width * 3;
+    var newHeight = height * 3;
+    
+    IJ.run(dupImg, "Size...", "width=" + newWidth + " height=" + newHeight + 
+           " depth=" + dupImg.getNFrames() + " constrain interpolation=Bicubic");
+    
+    // Open AVI export dialog
+    IJ.run(dupImg, "AVI... ", "");
+}
+
+////////////////////////////////////////
+// (12) Function: Open Movie Export Window
+////////////////////////////////////////
+function openMovieExportWindow() {
+    var movieDialog = new NonBlockingGenericDialog("Movie Export Options");
+    
+    movieDialog.addMessage("Movie Export Tools");
+    
+    // Button: Properties
+    movieDialog.addButton("Properties", function() { openProperties(); });
+    
+    // Button: Add Time Bar
+    movieDialog.addButton("Add Time Bar", function() { openTimeBar(); });
+    
+    // Button: Scale and Export
+    movieDialog.addButton("Scale and Export (3x + AVI)", function() { scaleAndExport(); });
+    
+    movieDialog.showDialog();
+}
+
+////////////////////////////////////////
+// (13) Main: Initialize the UI Dialog
 ////////////////////////////////////////
 function main() {
     // debugLog("Initializing UI elements...");
@@ -697,9 +747,8 @@ function main() {
     // Button: Add Scale Bar (opens scale bar tool)
     mainUIDialog.addButton("Add Scale Bar", function() { openScaleBar(); });
     
-    // New buttons: Properties and Add Time Bar
-    mainUIDialog.addButton("Properties", function() { openProperties(); });
-    mainUIDialog.addButton("Add Time Bar", function() { openTimeBar(); });
+    // Button: Movie Export (opens movie export window)
+    mainUIDialog.addButton("Movie Export", function() { openMovieExportWindow(); });
     
     // Button: Close All Except Original
     mainUIDialog.addButton("Close generated images", function() { closeAllExceptOriginal(); });
