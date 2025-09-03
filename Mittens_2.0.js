@@ -279,9 +279,11 @@ function createMergeOnly(showImage) {
                             mergedFrame.getWidth(), mergedFrame.getHeight(), nF);
                     }
                     
-                    // Copy frame to stack
-                    mergedStack.setT(f);
-                    mergedStack.setProcessor(mergedFrame.getProcessor());
+                    // Copy frame to stack - use setSlice for proper frame update
+                    mergedStack.setSlice(f);
+                    var stackProcessor = mergedStack.getProcessor();
+                    var frameProcessor = mergedFrame.getProcessor();
+                    stackProcessor.insert(frameProcessor, 0, 0);
                 }
                 
                 // Clean up frame
@@ -307,6 +309,9 @@ function createMergeOnly(showImage) {
                 mergedCal.unit = cal.unit;
                 mergedCal.frameInterval = cal.frameInterval;
                 mergedCal.fps = cal.fps;
+                
+                // Reset to first frame
+                mergedStack.setSlice(1);
                 
                 if (showImage) {
                     mergedStack.show();
