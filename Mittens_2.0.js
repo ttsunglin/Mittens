@@ -60,6 +60,8 @@ var originalImage = null;
 var duplicatedCroppedImage = null;
 // Array to hold the visible (8-bit) split/inverted channels.
 var splitInvertedChannels = new Array(4);
+// Array to hold the full time stack versions when useFrames is true
+var splitInvertedChannelsFullStack = new Array(4);
 // Final aligned (montage) image.
 var finalAlignedImage = null;
 
@@ -130,28 +132,34 @@ function duplicateSplitInvert() {
     
     // Handle time stack: process each frame if we have multiple frames
     if (useFrames && duplicatedCroppedImage.getNFrames() > 1) {
-        // For time stacks, we'll process the first frame for display
-        // but keep the full stack for merging
-        duplicatedCroppedImage.setT(1);
-        IJ.run(duplicatedCroppedImage, "Duplicate...", "duplicate frames=1");
-        var firstFrame = IJ.getImage();
+        // For time stacks, split all frames and process them
+        var nF = duplicatedCroppedImage.getNFrames();
         
-        // Split and process the first frame for display
-        var splitArr = ChannelSplitter.split(firstFrame);
+        // Split the full time stack
+        var splitArr = ChannelSplitter.split(duplicatedCroppedImage);
+        
         for (var i = 0; i < splitArr.length && i < 4; i++) {
+            // Process each channel's time stack
             IJ.run(splitArr[i], "8-bit", "");
             IJ.run(splitArr[i], "Grays", "");
-            IJ.run(splitArr[i], "Invert", "");
-            splitArr[i].setTitle("C" + (i+1) + "-TempForMerge_" + duplicatedCroppedImage.getTitle());
+            
+            // Invert all frames
+            for (var f = 1; f <= nF; f++) {
+                splitArr[i].setT(f);
+                IJ.run(splitArr[i], "Invert", "");
+            }
+            
+            splitArr[i].setTitle("C" + (i+1) + "-TempForMerge_" + originalImage.getTitle());
             splitArr[i].show();
             splitInvertedChannels[i] = splitArr[i];
+            
+            // Store the full stack reference
+            splitInvertedChannelsFullStack[i] = splitArr[i];
         }
         for (var k = splitArr.length; k < 4; k++) {
             splitInvertedChannels[k] = null;
+            splitInvertedChannelsFullStack[k] = null;
         }
-        
-        firstFrame.changes = false;
-        firstFrame.close();
     } else {
         // Original behavior for single frames
         var splitArr = ChannelSplitter.split(duplicatedCroppedImage);
@@ -162,9 +170,11 @@ function duplicateSplitInvert() {
             splitArr[i].setTitle("C" + (i+1) + "-TempForMerge_" + duplicatedCroppedImage.getTitle());
             splitArr[i].show();
             splitInvertedChannels[i] = splitArr[i];
+            splitInvertedChannelsFullStack[i] = null;
         }
         for (var k = splitArr.length; k < 4; k++) {
             splitInvertedChannels[k] = null;
+            splitInvertedChannelsFullStack[k] = null;
         }
     }
     
@@ -387,6 +397,7 @@ function createMergeOnly(showImage) {
 // (4) Function: Generate a Hidden 16-bit Copy for a Given Channel
 // For a channel selection such as "Ch1", duplicates the corresponding visible 8-bit image,
 // converts it to 16-bit (if necessary), copies calibration data, hides it, and returns the copy.
+// Now handles full time stacks when useFrames is enabled.
 ////////////////////////////////////////
 function getChannelImage16OnTheFly(chStr) {
     if (!chStr.startsWith("Ch")) return null;
@@ -396,18 +407,36 @@ function getChannelImage16OnTheFly(chStr) {
     }
     var visImp = splitInvertedChannels[idx];
     if (visImp == null) return null;
+    
     IJ.selectWindow(visImp.getTitle());
-    IJ.run(visImp, "Duplicate...", "duplicate");
+    
+    // Check if we have a time stack version
+    var useFrames = useFramesCheckbox.getState();
+    if (useFrames && visImp.getNFrames() > 1) {
+        // Duplicate the full time stack
+        IJ.run(visImp, "Duplicate...", "duplicate frames=1-" + visImp.getNFrames());
+    } else {
+        // Original behavior for single frames
+        IJ.run(visImp, "Duplicate...", "duplicate");
+    }
+    
     var dup = IJ.getImage();
     if (dup.getBitDepth() != 16) {
         IJ.run(dup, "16-bit", "");
     }
     dup.setTitle("16bit_" + visImp.getTitle());
+    
+    // Copy calibration including time calibration
     var cal = originalImage.getCalibration();
     var dupCal = dup.getCalibration();
     dupCal.pixelWidth = cal.pixelWidth;
     dupCal.pixelHeight = cal.pixelHeight;
     dupCal.unit = cal.unit;
+    if (dup.getNFrames() > 1) {
+        dupCal.frameInterval = cal.frameInterval;
+        dupCal.fps = cal.fps;
+    }
+    
     dup.hide(); // Hide the 16-bit duplicate so it does not confuse the user.
     // debugLog("Generated 16-bit copy for " + visImp.getTitle() + ": " + dup.getTitle());
     return dup;
