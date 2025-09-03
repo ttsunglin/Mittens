@@ -243,63 +243,30 @@ function createMergeOnly(showImage) {
         
         // Handle time stacks
         if (useFrames && localDup.getNFrames() > 1) {
-            // Process all frames
-            var mergedStack = null;
-            var nF = localDup.getNFrames();
+            // Split all channels from the time stack
+            var splitStacks = ChannelSplitter.split(localDup);
             
-            for (var f = 1; f <= nF; f++) {
-                localDup.setT(f);
-                IJ.run(localDup, "Duplicate...", "duplicate frames=" + f);
-                var frameImage = IJ.getImage();
-                
-                // Split the frame
-                var localSplit = ChannelSplitter.split(frameImage);
-                
-                // Convert to 16-bit
-                for (var i = 0; i < localSplit.length; i++) {
-                    if (localSplit[i] != null && localSplit[i].getBitDepth() != 16) {
-                        IJ.run(localSplit[i], "16-bit", "");
-                    }
-                }
-                
-                var toMerge = [];
-                for (var j = 0; j < checkboxes.length; j++) {
-                    if (checkboxes[j] && j < localSplit.length && localSplit[j] != null) {
-                        toMerge.push(localSplit[j]);
-                    }
-                }
-                
-                if (toMerge.length > 0) {
-                    var mergedFrame = RGBStackMerge.mergeChannels(toMerge, false);
-                    IJ.run(mergedFrame, "RGB Color", "");
-                    
-                    if (mergedStack == null) {
-                        // Create stack with first frame
-                        mergedStack = IJ.createImage("Merged_TimeStack", "RGB", 
-                            mergedFrame.getWidth(), mergedFrame.getHeight(), nF);
-                    }
-                    
-                    // Copy frame to stack - set the slice and copy pixels
-                    mergedStack.setSlice(f);
-                    var frameProcessor = mergedFrame.getProcessor();
-                    mergedStack.setProcessor(frameProcessor.duplicate());
-                }
-                
-                // Clean up frame
-                frameImage.changes = false;
-                frameImage.close();
-                for (var i = 0; i < localSplit.length; i++) {
-                    localSplit[i].changes = false;
-                    localSplit[i].close();
-                }
-                if (mergedFrame) {
-                    mergedFrame.changes = false;
-                    mergedFrame.close();
+            // Convert each channel stack to 16-bit
+            for (var i = 0; i < splitStacks.length; i++) {
+                if (splitStacks[i] != null && splitStacks[i].getBitDepth() != 16) {
+                    IJ.run(splitStacks[i], "16-bit", "");
                 }
             }
             
-            if (mergedStack != null) {
+            // Collect channels to merge based on checkboxes
+            var toMerge = [];
+            for (var j = 0; j < checkboxes.length; j++) {
+                if (checkboxes[j] && j < splitStacks.length && splitStacks[j] != null) {
+                    toMerge.push(splitStacks[j]);
+                }
+            }
+            
+            if (toMerge.length > 0) {
+                // Merge all frames at once
+                var mergedStack = RGBStackMerge.mergeChannels(toMerge, false);
+                IJ.run(mergedStack, "RGB Color", "");
                 mergedStack.setTitle("Merged_TimeStack_" + uniqueTitle);
+                
                 // Copy calibration
                 var cal = originalImage.getCalibration();
                 var mergedCal = mergedStack.getCalibration();
@@ -318,8 +285,15 @@ function createMergeOnly(showImage) {
                     mergedStack.hide();
                 }
                 
+                // Clean up
                 localDup.changes = false;
                 localDup.close();
+                for (var i = 0; i < splitStacks.length; i++) {
+                    if (splitStacks[i] != null) {
+                        splitStacks[i].changes = false;
+                        splitStacks[i].close();
+                    }
+                }
                 
                 return mergedStack;
             }
@@ -426,7 +400,12 @@ function getChannelImage16OnTheFly(chStr) {
     }
     
     var dup = IJ.getImage();
-    if (dup.getBitDepth() != 16) {
+    // Make sure we maintain the pixel values when converting bit depth
+    if (dup.getBitDepth() == 8) {
+        // For 8-bit images, scale to 16-bit range
+        IJ.run(dup, "16-bit", "");
+        IJ.run(dup, "Enhance Contrast", "saturated=0.35");
+    } else if (dup.getBitDepth() != 16) {
         IJ.run(dup, "16-bit", "");
     }
     dup.setTitle("16bit_" + visImp.getTitle());
