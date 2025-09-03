@@ -401,11 +401,13 @@ function getChannelImage16OnTheFly(chStr) {
     }
     
     var dup = IJ.getImage();
-    // Convert to 16-bit if necessary (without modifying pixel values)
-    if (dup.getBitDepth() != 16) {
+    // Keep 8-bit images as 8-bit to preserve visibility
+    // Only convert if it's not already 8-bit or 16-bit
+    if (dup.getBitDepth() != 8 && dup.getBitDepth() != 16) {
         IJ.run(dup, "16-bit", "");
     }
-    dup.setTitle("16bit_" + visImp.getTitle());
+    // Don't convert 8-bit to 16-bit - let the stacking handle it
+    dup.setTitle("Aligned_" + visImp.getTitle());
     
     // Copy calibration including time calibration
     var cal = originalImage.getCalibration();
