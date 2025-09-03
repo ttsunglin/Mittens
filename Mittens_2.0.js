@@ -658,7 +658,6 @@ function main() {
     
     // Button: Open Brightness/Contrast
     mainUIDialog.addButton("Open Brightness/Contrast", function() { openBrightnessContrast(); });
-    mainUIDialog.addMessage(" ");
     
     // Button: Duplicate / Split / Invert with "use frames" checkbox
     mainUIDialog.addButton("Dup / Split / Invert", function() { duplicateSplitInvert(); });
@@ -666,7 +665,6 @@ function main() {
     mainUIDialog.addCheckbox("use frames", false);
     var checkboxVector = mainUIDialog.getCheckboxes();
     useFramesCheckbox = checkboxVector.get(checkboxVector.size() - 1);
-    mainUIDialog.addMessage(" ");
     
     // Merge Checkboxes
     mainUIDialog.addMessage("Select channels to merge :                                                     ");
@@ -685,7 +683,6 @@ function main() {
     
     // Button: Create Merge Only (independent display)
     mainUIDialog.addButton("Create Merge Only", function() { createMergeOnly(true); });
-    mainUIDialog.addMessage(" ");
     
     // Alignment Choices
     mainUIDialog.addMessage("Select channels to align :");
@@ -693,21 +690,16 @@ function main() {
         mainUIDialog.addChoice("Image " + i + ":", baseChannelOptions, "None");
     }
     alignmentChoices = mainUIDialog.getChoices();
-    mainUIDialog.addMessage(" ");
     
     // Button: Align Selected Images (+ Merged)
     mainUIDialog.addButton("Align Selected Images", function() { alignSelectedImages(); });
-    mainUIDialog.addMessage(" ");
     
     // Button: Add Scale Bar (opens scale bar tool)
     mainUIDialog.addButton("Add Scale Bar", function() { openScaleBar(); });
-    mainUIDialog.addMessage(" ");
     
     // New buttons: Properties and Add Time Bar
     mainUIDialog.addButton("Properties", function() { openProperties(); });
-    mainUIDialog.addToSameRow();
     mainUIDialog.addButton("Add Time Bar", function() { openTimeBar(); });
-    mainUIDialog.addMessage(" ");
     
     // Button: Close All Except Original
     mainUIDialog.addButton("Close generated images", function() { closeAllExceptOriginal(); });
