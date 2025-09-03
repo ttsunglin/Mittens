@@ -279,11 +279,10 @@ function createMergeOnly(showImage) {
                             mergedFrame.getWidth(), mergedFrame.getHeight(), nF);
                     }
                     
-                    // Copy frame to stack - use setSlice for proper frame update
+                    // Copy frame to stack - set the slice and copy pixels
                     mergedStack.setSlice(f);
-                    var stackProcessor = mergedStack.getProcessor();
                     var frameProcessor = mergedFrame.getProcessor();
-                    stackProcessor.insert(frameProcessor, 0, 0);
+                    mergedStack.setProcessor(frameProcessor.duplicate());
                 }
                 
                 // Clean up frame
