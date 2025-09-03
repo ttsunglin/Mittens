@@ -143,11 +143,9 @@ function duplicateSplitInvert() {
             IJ.run(splitArr[i], "8-bit", "");
             IJ.run(splitArr[i], "Grays", "");
             
-            // Invert all frames
-            for (var f = 1; f <= nF; f++) {
-                splitArr[i].setT(f);
-                IJ.run(splitArr[i], "Invert", "");
-            }
+            // Invert the entire stack at once using "stack" option
+            // This avoids the popup dialog for each frame
+            IJ.run(splitArr[i], "Invert", "stack");
             
             splitArr[i].setTitle("C" + (i+1) + "-TempForMerge_" + originalImage.getTitle());
             splitArr[i].show();
