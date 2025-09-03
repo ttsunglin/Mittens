@@ -688,32 +688,41 @@ function scaleAndExport() {
 // (12) Function: Open Movie Export Window
 ////////////////////////////////////////
 function openMovieExportWindow() {
-    // Use a simple approach with direct button actions
+    // Create a simple menu using IJ.showMessageWithCancel and multiple options
+    var html = "<html>" +
+        "<h3>Movie Export Options</h3>" +
+        "<p>Choose an option number:</p>" +
+        "<ol>" +
+        "<li><b>Properties</b> - View/edit image properties</li>" +
+        "<li><b>Add Time Bar</b> - Add temporal annotation</li>" +
+        "<li><b>Scale and Export</b> - Scale 3x and export as AVI</li>" +
+        "</ol>" +
+        "</html>";
+    
     importClass(Packages.ij.gui.GenericDialog);
+    var gd = new GenericDialog("Movie Export");
+    gd.addMessage(html);
+    gd.addNumericField("Enter option (1-3):", 1, 0);
+    gd.showDialog();
     
-    var movieDialog = new GenericDialog("Movie Export Options");
-    
-    movieDialog.addMessage("Movie Export Tools");
-    movieDialog.addMessage("");
-    movieDialog.addMessage("Click OK and then choose an option:");
-    
-    var options = ["Properties", "Add Time Bar", "Scale and Export (3x + AVI)", "Cancel"];
-    movieDialog.addRadioButtonGroup("Select action:", options, 4, 1, "Cancel");
-    
-    movieDialog.showDialog();
-    
-    if (movieDialog.wasCanceled()) {
+    if (gd.wasCanceled()) {
         return;
     }
     
-    var choice = movieDialog.getNextRadioButton();
+    var choice = parseInt(gd.getNextNumber());
     
-    if (choice === "Properties") {
-        openProperties();
-    } else if (choice === "Add Time Bar") {
-        openTimeBar();
-    } else if (choice === "Scale and Export (3x + AVI)") {
-        scaleAndExport();
+    switch(choice) {
+        case 1:
+            openProperties();
+            break;
+        case 2:
+            openTimeBar();
+            break;
+        case 3:
+            scaleAndExport();
+            break;
+        default:
+            IJ.showMessage("Invalid option", "Please enter 1, 2, or 3");
     }
 }
 
@@ -765,8 +774,11 @@ function main() {
     // Button: Add Scale Bar (opens scale bar tool)
     mainUIDialog.addButton("Add Scale Bar", function() { openScaleBar(); });
     
-    // Button: Movie Export (opens movie export window)
-    mainUIDialog.addButton("Movie Export", function() { openMovieExportWindow(); });
+    // Movie Export section
+    mainUIDialog.addMessage("Movie Export Tools:");
+    mainUIDialog.addButton("Properties", function() { openProperties(); });
+    mainUIDialog.addButton("Add Time Bar", function() { openTimeBar(); });
+    mainUIDialog.addButton("Scale and Export (3x + AVI)", function() { scaleAndExport(); });
     
     // Button: Close All Except Original
     mainUIDialog.addButton("Close generated images", function() { closeAllExceptOriginal(); });
