@@ -640,8 +640,8 @@ function openProperties() {
 ////////////////////////////////////////
 function openTimeBar() {
     try {
-        // Try to run the Time Bar plugin
-        IJ.run("Time Bar", "");
+        // Try to run the Time Bar plugin - note the ellipsis is required
+        IJ.run("Time Bar...", "");
     } catch (e) {
         // If the plugin is not installed, show an error message
         IJ.showMessage("Time Bar Not Found", 
