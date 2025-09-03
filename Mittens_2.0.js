@@ -143,13 +143,12 @@ function duplicateSplitInvert() {
         var splitArr = ChannelSplitter.split(duplicatedCroppedImage);
         
         for (var i = 0; i < splitArr.length && i < 4; i++) {
-            // Process each channel's time stack
-            IJ.run(splitArr[i], "8-bit", "");
+            // Process each channel's time stack - keep original bit depth
+            // Apply Grays LUT for grayscale display
             IJ.run(splitArr[i], "Grays", "");
             
-            // Invert the entire stack at once using "stack" option
-            // This avoids the popup dialog for each frame
-            IJ.run(splitArr[i], "Invert", "stack");
+            // Use Invert LUT instead of modifying pixel values
+            IJ.run(splitArr[i], "Invert LUT", "");
             
             splitArr[i].setTitle("C" + (i+1) + "-TempForMerge_" + originalImage.getTitle());
             splitArr[i].show();
@@ -166,9 +165,10 @@ function duplicateSplitInvert() {
         // Original behavior for single frames
         var splitArr = ChannelSplitter.split(duplicatedCroppedImage);
         for (var i = 0; i < splitArr.length && i < 4; i++) {
-            IJ.run(splitArr[i], "8-bit", "");
+            // Keep original bit depth, apply Grays LUT for display
             IJ.run(splitArr[i], "Grays", "");
-            IJ.run(splitArr[i], "Invert", "");
+            // Use Invert LUT instead of modifying pixel values
+            IJ.run(splitArr[i], "Invert LUT", "");
             splitArr[i].setTitle("C" + (i+1) + "-TempForMerge_" + duplicatedCroppedImage.getTitle());
             splitArr[i].show();
             splitInvertedChannels[i] = splitArr[i];
@@ -401,12 +401,8 @@ function getChannelImage16OnTheFly(chStr) {
     }
     
     var dup = IJ.getImage();
-    // Keep 8-bit images as 8-bit to preserve visibility
-    // Only convert if it's not already 8-bit or 16-bit
-    if (dup.getBitDepth() != 8 && dup.getBitDepth() != 16) {
-        IJ.run(dup, "16-bit", "");
-    }
-    // Don't convert 8-bit to 16-bit - let the stacking handle it
+    // Channels now maintain their original bit depth (8-bit or 16-bit)
+    // No conversion needed since we're using LUTs for display
     dup.setTitle("Aligned_" + visImp.getTitle());
     
     // Copy calibration including time calibration
