@@ -765,14 +765,15 @@ function main() {
     // Button: Align Selected Images (+ Merged)
     mainUIDialog.addButton("Align Selected Images", function() { alignSelectedImages(); });
     
+    // Small spacing
+    mainUIDialog.addMessage("");
+    
     // Button: Add Scale Bar (opens scale bar tool)
     mainUIDialog.addButton("Add Scale Bar", function() { openScaleBar(); });
     
-    // Movie Export section
-    mainUIDialog.addMessage("Movie Export Tools:");
-    mainUIDialog.addButton("Properties", function() { openProperties(); });
+    // Time Bar and Properties buttons
     mainUIDialog.addButton("Add Time Bar", function() { openTimeBar(); });
-    mainUIDialog.addButton("Scale and Export (3x + AVI)", function() { scaleAndExport(); });
+    mainUIDialog.addButton("Properties", function() { openProperties(); });
     
     // Spacing before close button
     mainUIDialog.addMessage(" ");
