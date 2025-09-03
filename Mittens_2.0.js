@@ -683,20 +683,33 @@ function scaleAndExport() {
 // (12) Function: Open Movie Export Window
 ////////////////////////////////////////
 function openMovieExportWindow() {
-    var movieDialog = new NonBlockingGenericDialog("Movie Export Options");
+    // Use a simple approach with direct button actions
+    importClass(Packages.ij.gui.GenericDialog);
+    
+    var movieDialog = new GenericDialog("Movie Export Options");
     
     movieDialog.addMessage("Movie Export Tools");
+    movieDialog.addMessage("");
+    movieDialog.addMessage("Click OK and then choose an option:");
     
-    // Button: Properties
-    movieDialog.addButton("Properties", function() { openProperties(); });
-    
-    // Button: Add Time Bar
-    movieDialog.addButton("Add Time Bar", function() { openTimeBar(); });
-    
-    // Button: Scale and Export
-    movieDialog.addButton("Scale and Export (3x + AVI)", function() { scaleAndExport(); });
+    var options = ["Properties", "Add Time Bar", "Scale and Export (3x + AVI)", "Cancel"];
+    movieDialog.addRadioButtonGroup("Select action:", options, 4, 1, "Cancel");
     
     movieDialog.showDialog();
+    
+    if (movieDialog.wasCanceled()) {
+        return;
+    }
+    
+    var choice = movieDialog.getNextRadioButton();
+    
+    if (choice === "Properties") {
+        openProperties();
+    } else if (choice === "Add Time Bar") {
+        openTimeBar();
+    } else if (choice === "Scale and Export (3x + AVI)") {
+        scaleAndExport();
+    }
 }
 
 ////////////////////////////////////////
