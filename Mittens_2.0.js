@@ -530,7 +530,8 @@ function stackImagesHorizontally(images) {
         
         // Process each time frame
         for (var f = 1; f <= maxFrames; f++) {
-            stack.setT(f);
+            // Set the frame for the output stack
+            stack.setSlice(f);
             var ip = stack.getProcessor();
             var xOffset = 0;
             
@@ -539,14 +540,15 @@ function stackImagesHorizontally(images) {
                 var proc;
                 
                 if (img.getNFrames() >= f) {
-                    img.setT(f);
-                    proc = img.getProcessor();
+                    // Set frame and get a fresh processor
+                    img.setSlice(f);
+                    proc = img.getProcessor().duplicate();
                 } else if (img.getNFrames() > 0) {
                     // Use last available frame if this image has fewer frames
-                    img.setT(img.getNFrames());
-                    proc = img.getProcessor();
+                    img.setSlice(img.getNFrames());
+                    proc = img.getProcessor().duplicate();
                 } else {
-                    proc = img.getProcessor();
+                    proc = img.getProcessor().duplicate();
                 }
                 
                 if (anyRGB && img.getBitDepth() != 24) {
